@@ -37,17 +37,18 @@
   .chip{font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--sub);cursor:pointer}
   .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;align-items:start}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px}
   .card{position:relative;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s}
   .card:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(26,23,18,.08),0 18px 44px rgba(26,23,18,.12)}
   .card.secret{border-color:#e6b8ae}
-  .th.wide{aspect-ratio:16/9}
+  .th.wide{background:#fff}
+  .th.wide img{object-fit:contain;background:#fff}
   .th{display:block;aspect-ratio:9/16;background:#ddd4c8;overflow:hidden;position:relative}
   .th img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
   .card:hover .th img{transform:scale(1.04)}
   .badge{position:absolute;left:9px;top:9px;background:rgba(26,23,18,.82);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:6px}
   .badge.secret{left:auto;right:9px;background:var(--warn);letter-spacing:0}
-  .cap{display:block;padding:13px 15px 8px;font-size:14.5px;font-weight:600;line-height:1.4;text-decoration:none;color:inherit;min-height:2.8em}
+  .cap{display:block;padding:13px 15px 8px;font-size:14.5px;font-weight:600;line-height:1.4;text-decoration:none;color:inherit;min-height:calc(4.2em + 21px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .cap:hover{color:var(--accent)}
   .card-actions{display:flex;gap:6px;margin:0 12px 12px}
   .copy-btn{flex:1;padding:9px 0;border:1px solid transparent;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,transform .06s}
