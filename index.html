@@ -37,10 +37,11 @@
   .chip{font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--sub);cursor:pointer}
   .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;align-items:start}
   .card{position:relative;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s}
   .card:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(26,23,18,.08),0 18px 44px rgba(26,23,18,.12)}
   .card.secret{border-color:#e6b8ae}
+  .th.wide{aspect-ratio:16/9}
   .th{display:block;aspect-ratio:9/16;background:#ddd4c8;overflow:hidden;position:relative}
   .th img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
   .card:hover .th img{transform:scale(1.04)}
@@ -244,6 +245,10 @@ const OFFICIAL = [
   {id:"J_-WeGLdD10",title:"지제역반도체밸리 쌍용더플래티넘 거실 간접조명 완벽분석 (옵션 / 미옵션 세대)",url:"https://youtube.com/shorts/J_-WeGLdD10",thumb:"",secret:false,official:true},
   {id:"QRfsPgv8pdM",title:"지제역반도체밸리 쌍용더플래티넘 복도·현관·욕실 간접조명 완벽분석",url:"https://youtube.com/shorts/QRfsPgv8pdM",thumb:"",secret:false,official:true},
   {id:"gS0fN_Ya71M",title:"지제역반도체밸리 쌍용더플래티넘 주방·안방 간접조명 + 블랙 스위치 (미옵션 세대)",url:"https://youtube.com/shorts/gS0fN_Ya71M",thumb:"",secret:false,official:true},
+  {id:"eeFmBuC1C90",title:"루씨커넥트 연결 방법",url:"https://www.youtube.com/watch?v=eeFmBuC1C90",thumb:"",secret:false,official:true},
+  {id:"Fu6rBgMGLUY",title:"루씨에어 리모컨 동기화",url:"https://www.youtube.com/watch?v=Fu6rBgMGLUY",thumb:"",secret:false,official:true},
+  {id:"jRzGchxwKSM",title:"루씨에어 코타라 1·4·6 단계별 가동 영상",url:"https://www.youtube.com/watch?v=jRzGchxwKSM",thumb:"",secret:false,official:true},
+  {id:"EwVUTYgs-d4",title:"루씨에어 레이더 1·4·6 단계별 가동 영상",url:"https://www.youtube.com/watch?v=EwVUTYgs-d4",thumb:"",secret:false,official:true},
 ];
 
 /* ===== 추가 영상 (내보내기 시 이 배열에 채워짐) ===== */
@@ -306,9 +311,10 @@ function render(){
     const idx = videos.indexOf(v);
     const card=document.createElement("div");
     card.className="card"+(v.secret?" secret":"");
-    const badges = '<span class="badge">SHORTS</span>' + (v.secret?'<span class="badge secret">🔒 사내전용</span>':'');
+    const isShort = /\/shorts\//.test(v.url||"");
+    const badges = '<span class="badge">'+(isShort?'SHORTS':'영상')+'</span>' + (v.secret?'<span class="badge secret">🔒 사내전용</span>':'');
     card.innerHTML =
-      '<a class="th" href="'+esc(v.url)+'" target="_blank" rel="noopener">'+badges+
+      '<a class="th'+(isShort?'':' wide')+'" href="'+esc(v.url)+'" target="_blank" rel="noopener">'+badges+
         '<img loading="lazy" src="'+esc(thumbOf(v))+'" alt=""></a>'+
       '<a class="cap" href="'+esc(v.url)+'" target="_blank" rel="noopener">'+esc(v.title)+'</a>'+
       '<div class="card-actions">'+
