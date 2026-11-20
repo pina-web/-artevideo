@@ -168,6 +168,7 @@ window.arteNavSet();
 
     <div class="bar">
       <button class="btn btn-accent" id="addBtn">＋ 영상 추가</button>
+      <button class="btn btn-accent" id="bulkBtn">⚡ 유튜브 한번에 추가</button>
       <button class="btn btn-dark" id="exportBtn">⬇ 업데이트 파일 내보내기</button>
       <div class="filters">
         <button class="chip" data-f="all">전체</button>
@@ -210,6 +211,38 @@ window.arteNavSet();
         <div class="modal-actions">
           <button class="btn btn-ghost" id="cancelBtn">취소</button>
           <button class="btn btn-accent" id="saveBtn">추가하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk import modal -->
+  <div class="overlay" id="bulkOverlay">
+    <div class="modal">
+      <div class="modal-h"><h2>유튜브 한번에 추가</h2><button class="x" id="bClose">×</button></div>
+      <div class="modal-b">
+        <div class="field">
+          <label>유튜브 링크 붙여넣기 (여러 개 한 번에, 줄바꿈·띄어쓰기 상관없음)</label>
+          <textarea id="bText" rows="7" placeholder="https://youtube.com/shorts/...&#10;https://youtu.be/...&#10;https://www.youtube.com/watch?v=..." style="padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fffef9;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+          <span class="hint">이미 들어 있는 영상은 자동으로 건너뜁니다. 제목은 유튜브에서 자동으로 가져옵니다.</span>
+        </div>
+        <div class="field">
+          <label>또는 채널 페이지를 저장한 파일 올리기 (선택)</label>
+          <div class="drop" id="bDrop" style="padding:16px">
+            <div class="ph" id="bDropPh">유튜브 채널 「동영상」 페이지를 Ctrl+S로 저장한 뒤, 그 .html 파일을 여기에 놓거나 클릭해서 선택하세요</div>
+            <input type="file" id="bFile" accept=".html,.htm,.txt,.xml" style="display:none">
+          </div>
+        </div>
+        <div class="checkrow">
+          <input type="checkbox" id="bSecret">
+          <label for="bSecret">🔒 외부유출 금지 (사내 전용 영상)
+            <small>체크하면 이번에 추가되는 영상 전부에 사내전용 표시가 붙습니다.</small>
+          </label>
+        </div>
+        <div class="hint" id="bStat"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="bCancel">취소</button>
+          <button class="btn btn-accent" id="bRun">가져오기</button>
         </div>
       </div>
     </div>
@@ -388,6 +421,87 @@ document.getElementById("saveBtn").onclick=()=>{
   videos.push({id, title, url, thumb: pendingThumb||"", secret, official:false});
   closeModal(); render();
   toast(secret?"🔒 사내전용 영상 추가됨":"영상 추가됨");
+};
+
+/* ===== 유튜브 한번에 추가 ===== */
+const bOverlay=document.getElementById("bulkOverlay");
+function bOpen(){bOverlay.classList.add("on");}
+function bClose(){bOverlay.classList.remove("on");document.getElementById("bText").value="";document.getElementById("bSecret").checked=false;document.getElementById("bStat").textContent="";document.getElementById("bDropPh").textContent="유튜브 채널 「동영상」 페이지를 Ctrl+S로 저장한 뒤, 그 .html 파일을 여기에 놓거나 클릭해서 선택하세요";document.getElementById("bRun").disabled=false;}
+document.getElementById("bulkBtn").onclick=bOpen;
+document.getElementById("bClose").onclick=bClose;
+document.getElementById("bCancel").onclick=bClose;
+bOverlay.addEventListener("click",e=>{if(e.target===bOverlay)bClose();});
+
+const bDrop=document.getElementById("bDrop"), bFile=document.getElementById("bFile");
+bDrop.addEventListener("click",()=>bFile.click());
+bDrop.addEventListener("dragover",e=>{e.preventDefault();bDrop.classList.add("over");});
+bDrop.addEventListener("dragleave",()=>bDrop.classList.remove("over"));
+bDrop.addEventListener("drop",e=>{e.preventDefault();bDrop.classList.remove("over");const f=e.dataTransfer.files[0];if(f)bReadFile(f);});
+bFile.addEventListener("change",e=>{const f=e.target.files[0];if(f)bReadFile(f);});
+function bReadFile(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    const ta=document.getElementById("bText");
+    ta.value=(ta.value?ta.value+"\n":"")+String(r.result||"");
+    const n=bExtract(ta.value).length;
+    document.getElementById("bDropPh").textContent=file.name+" 읽음 · 영상 링크 "+n+"개 찾음";
+  };
+  r.readAsText(file);
+}
+
+/* 텍스트에서 영상 목록 뽑기 (중복 제거, 쇼츠 여부 유지) */
+function bExtract(text){
+  const re=/(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(shorts\/|watch\?v=|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/g;
+  const seen={}, out=[];
+  let m;
+  while((m=re.exec(text))!==null){
+    const id=m[2];
+    if(seen[id])continue;
+    seen[id]=1;
+    const isShort=(m[1]||"").indexOf("shorts")===0;
+    out.push({id:id, url:isShort?("https://youtube.com/shorts/"+id):("https://www.youtube.com/watch?v="+id)});
+  }
+  return out;
+}
+
+/* 유튜브 제목 가져오기 (실패해도 추가는 진행) */
+async function bTitle(id){
+  try{
+    const u="https://www.youtube.com/oembed?format=json&url="+encodeURIComponent("https://www.youtube.com/watch?v="+id);
+    const r=await fetch(u);
+    if(!r.ok) return "";
+    const j=await r.json();
+    return (j && j.title) ? String(j.title) : "";
+  }catch(e){ return ""; }
+}
+
+document.getElementById("bRun").onclick=async ()=>{
+  const stat=document.getElementById("bStat");
+  const btn=document.getElementById("bRun");
+  const secret=document.getElementById("bSecret").checked;
+  const found=bExtract(document.getElementById("bText").value);
+  if(!found.length){stat.textContent="유튜브 링크를 찾지 못했습니다. 링크를 붙여넣어 주세요.";return;}
+  const have={}; videos.forEach(v=>{ if(v.id) have[v.id]=1; });
+  const add=found.filter(f=>!have[f.id]);
+  const dup=found.length-add.length;
+  if(!add.length){stat.textContent="찾은 "+found.length+"개 모두 이미 들어 있습니다.";return;}
+  btn.disabled=true;
+  let done=0, noTitle=0;
+  for(const f of add){
+    stat.textContent="제목 가져오는 중… ("+(done+1)+"/"+add.length+")";
+    const t=await bTitle(f.id);
+    if(!t) noTitle++;
+    videos.push({id:f.id,title:t||("제목 확인 필요 ("+f.id+")"),url:f.url,thumb:"",secret:secret,official:false});
+    done++;
+  }
+  render();
+  let msg=add.length+"개 추가됨";
+  if(dup) msg+=" · 이미 있던 "+dup+"개는 건너뜀";
+  if(noTitle) msg+=" · 제목을 못 가져온 "+noTitle+"개는 「제목 확인 필요」로 들어갔습니다";
+  stat.textContent=msg;
+  toast(add.length+"개 추가됨");
+  btn.disabled=false;
+  document.getElementById("bText").value="";
 };
 
 /* 필터 */
